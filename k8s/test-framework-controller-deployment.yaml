@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-framework-controller
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: test-framework-controller
+  template:
+    metadata:
+      labels:
+        app: test-framework-controller
+    spec:
+      containers:
+      - name: test-framework-controller
+        image: 481665091081.dkr.ecr.eu-north-1.amazonaws.com/test-framework:latest
+        env:
+        - name: SELENIUM_GRID_URL
+          value: "http://selenium-hub.default.svc.cluster.local:4444/wd/hub"
+        command: ["sh", "-c", "sleep 10 && pytest --alluredir=reports -v --tb=short && sleep infinity"]

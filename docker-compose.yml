@@ -1,0 +1,43 @@
+version: '3.8'
+
+networks:
+  default:
+    name: insider-automation-network
+    
+services:
+  selenium-hub:
+    image: selenium/hub:latest
+    container_name: selenium-hub
+    ports:
+      - "4444:4444"
+    environment:
+      - SE_OPENTELEMETRY_ENABLED=false
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4444/status"]
+      interval: 5s
+      retries: 5
+      start_period: 10s
+      timeout: 3s
+
+  chrome-node:
+    image: selenium/node-chrome:latest
+    shm_size: 2gb
+    depends_on:
+      - selenium-hub
+    environment:
+      - SE_EVENT_BUS_HOST=selenium-hub
+      - SE_EVENT_BUS_PUBLISH_PORT=4442
+      - SE_EVENT_BUS_SUBSCRIBE_PORT=4443
+    links:
+      - selenium-hub
+
+  test-framework:
+    build:
+      context: .
+    depends_on:
+      selenium-hub:
+        condition: service_healthy  
+    environment:
+      - SELENIUM_GRID_URL=http://selenium-hub:4444
+    entrypoint: sh -c "sleep 10 && pytest --alluredir=reports"  
+
